@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5" />
+    <title>AI Resume Builder · Pro</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- html2pdf for PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        :root {
+            --bg-page: #f4f7fb;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --border-light: #e2e8f0;
+            --shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+            --accent: #4f46e5;
+            --accent-soft: #eef2ff;
+            --input-bg: #f8fafc;
+            --radius: 20px;
+            --transition: 0.2s ease;
+        }
+        .dark {
+            --bg-page: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-light: #334155;
+            --shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+            --accent: #818cf8;
+            --accent-soft: #2d3a5e;
+            --input-bg: #2d3a5e;
+        }
+        body {
+            background: var(--bg-page);
+            color: var(--text-primary);
+            padding: 1.2rem;
+            transition: background 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+        .app {
+            max-width: 1450px;
+            width: 100%;
+        }
+        /* header */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.8rem;
+        }
+        .logo h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(145deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo span {
+            font-size: 0.8rem;
+            background: var(--accent-soft);
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            color: var(--accent);
+            -webkit-text-fill-color: var(--accent);
+            font-weight: 500;
+            margin-left: 0.3rem;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            align-items: center;
+        }
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: var(--shadow);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .btn-outline {
+            background: transparent;
+        }
+        .btn-outline:hover {
+            background: var(--accent-soft);
+        }
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 40px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        /* grid */
+        .builder-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.8rem;
+        }
+        @media (max-width: 1000px) {
+            .builder-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem 1.8rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            transition: background 0.3s, border 0.3s;
+            margin-bottom: 1.2rem;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .card-title i {
+            color: var(--accent);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+            color: var(--text-secondary);
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: 0.2s;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .photo-upload {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .photo-upload img {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-light);
+            background: #eee;
+        }
+        .photo-upload input {
+            flex: 1;
+        }
+        .entry-list {
+            margin: 0.5rem 0 1rem 0;
+        }
+        .entry-item {
+            background: var(--input-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin: 0.2rem 0.4rem 0.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        .entry-item .remove {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .add-btn {
+            background: var(--accent-soft);
+            border: 1px dashed var(--accent);
+            padding: 0.2rem 1.2rem;
+            border-radius: 40px;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .add-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+        /* template selector */
+        .template-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .template-option {
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .template-option.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+        /* CV preview */
+        .cv-preview {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+        }
+        .cv-paper {
+            background: white;
+            color: #0f172a;
+            padding: 2rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            font-family: 'Inter', sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+            transition: 0.2s;
+        }
+        .cv-paper.template-classic .cv-name {
+            font-size: 2.2rem;
+            font-weight: 700;
+            border-bottom: 4px solid #4f46e5;
+            padding-bottom: 0.2rem;
+        }
+        .cv-paper.template-modern .cv-name {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .cv-paper.template-minimal .cv-name {
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .cv-paper .cv-title {
+            font-size: 1rem;
+            color: #475569;
+            margin: 0.2rem 0 0.6rem 0;
+        }
+        .cv-paper .cv-section {
+            margin-top: 1rem;
+        }
+        .cv-paper .cv-section h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.2rem;
+            margin-bottom: 0.4rem;
+        }
+        .cv-paper .cv-detail {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 0.1rem 0;
+        }
+        .cv-paper .cv-detail i {
+            width: 1.2rem;
+            color: #4f46e5;
+        }
+        .cv-paper .cv-skills span {
+            display: inline-block;
+            background: #eef2ff;
+            padding: 0.15rem 0.8rem;
+            border-radius: 30px;
+            margin: 0.15rem 0.2rem;
+            font-size: 0.75rem;
+        }
+        .cv-paper .cv-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e2e8f0;
+            float: right;
+            margin-left: 1rem;
+        }
+        .preview-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .badge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem 0.6rem;
+        }
+        .badge-list span {
+            background: var(--accent-soft);
+            padding: 0.1rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+        /* animations */
+        .fade-in {
+            animation: fadeIn 0.25s ease;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0.3;
+                transform: translateY(4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* mobile */
+        @media (max-width: 600px) {
+            .card {
+                padding: 1rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <div class="logo">
+            <h1><i class="fas fa-robot" style="color:var(--accent); -webkit-text-fill-color:var(--accent);"></i> AI Resume <span>Pro</span></h1>
+        </div>
+        <div class="actions">
+            <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i> <span id="themeLabel">Dark</span></button>
+            <button class="btn btn-primary" id="downloadPdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+        </div>
+    </header>
+
+    <div class="builder-grid">
+        <!-- LEFT FORM -->
+        <section>
+            <!-- Personal -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-user-circle"></i> Personal</div>
+                <div class="photo-upload">
+                    <img id="avatarPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e2e8f0'/%3E%3Ctext x='50' y='55' font-size='30' text-anchor='middle' fill='%236b7280'%3E📷%3C/text%3E%3C/svg%3E" alt="avatar" />
+                    <input type="file" id="photoInput" accept="image/*" />
+                    <button class="btn btn-outline" id="aiSummaryBtn" style="margin-left:auto;"><i class="fas fa-wand-magic-sparkles"></i> AI Summary</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Full Name</label><input type="text" id="fullName" value="Alex Rivera" /></div>
+                    <div class="form-group"><label>Job Title</label><input type="text" id="jobTitle" value="Full Stack Developer" /></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Email</label><input type="email" id="email" value="alex@dev.io" /></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="phone" value="+1 555 987 6543" /></div>
+                </div>
+                <div class="form-group"><label>Address</label><input type="text" id="address" value="Austin, TX" /></div>
+                <div class="form-group"><label>Summary</label><textarea id="summary" rows="2">Full-stack developer with 5+ years of experience in React, Node.js, and cloud architecture. Passionate about clean code and scalable systems.</textarea></div>
+                <div class="form-group"><label>Skills (comma)</label><input type="text" id="skills" value="React, Node.js, TypeScript, AWS, Docker, GraphQL" /></div>
+            </div>
+
+            <!-- Experience (unlimited) -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-briefcase"></i> Experience <button class="add-btn" id="addExpBtn" style="margin-left:auto;"><i class="fas fa-plus"></i> Add</button></div>
+                <div id="expList" class="entry-list"></div>
+            </div>
+
+            <!-- Education (unlimited) -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-graduation-cap"></i> Education <button class="add-btn" id="addEduBtn" style="margin-left:auto;"><i class="fas fa-plus"></i> Add</button></div>
+                <div id="eduList" class="entry-list"></div>
+            </div>
+
+            <!-- Certifications, Projects, Languages, Social -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-certificate"></i> Certifications</div>
+                <div class="form-group"><input type="text" id="certInput" placeholder="e.g. AWS Certified" /></div>
+                <button class="add-btn" id="addCertBtn"><i class="fas fa-plus"></i> Add</button>
+                <div id="certList" class="entry-list" style="margin-top:0.5rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-project-diagram"></i> Projects</div>
+                <div class="form-group"><input type="text" id="projectInput" placeholder="e.g. E-commerce Platform" /></div>
+                <button class="add-btn" id="addProjectBtn"><i class="fas fa-plus"></i> Add</button>
+                <div id="projectList" class="entry-list" style="margin-top:0.5rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-language"></i> Languages</div>
+                <div class="form-group"><input type="text" id="langInput" placeholder="e.g. Spanish (Native)" /></div>
+                <button class="add-btn" id="addLangBtn"><i class="fas fa-plus"></i> Add</button>
+                <div id="langList" class="entry-list" style="margin-top:0.5rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-link"></i> Social</div>
+                <div class="form-row">
+                    <div class="form-group"><label>GitHub</label><input type="text" id="githubInput" placeholder="username" value="alexdev" /></div>
+                    <div class="form-group"><label>LinkedIn</label><input type="text" id="linkedinInput" placeholder="username" value="alexrivera" /></div>
+                </div>
+            </div>
+
+            <!-- Templates -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-palette"></i> Templates</div>
+                <div class="template-selector" id="templateSelector">
+                    <span class="template-option active" data-template="classic">Classic</span>
+                    <span class="template-option" data-template="modern">Modern</span>
+                    <span class="template-option" data-template="minimal">Minimal</span>
+                    <span class="template-option" data-template="professional">Professional</span>
+                    <span class="template-option" data-template="creative">Creative</span>
+                </div>
+                <button class="btn btn-primary" id="refreshPreviewBtn" style="width:100%;justify-content:center;"><i class="fas fa-sync-alt"></i> Refresh Preview</button>
+            </div>
+        </section>
+
+        <!-- RIGHT PREVIEW -->
+        <section>
+            <div class="cv-preview" id="cvPreviewContainer">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+                    <span class="card-title" style="margin-bottom:0;"><i class="fas fa-file-alt"></i> Live CV</span>
+                    <span style="font-size:0.7rem;background:var(--accent-soft);padding:0.2rem 1rem;border-radius:30px;color:var(--accent);">ATS ready</span>
+                </div>
+                <div id="cvPaper" class="cv-paper template-classic">
+                    <img id="cvAvatar" class="cv-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e2e8f0'/%3E%3Ctext x='50' y='55' font-size='30' text-anchor='middle' fill='%236b7280'%3E📷%3C/text%3E%3C/svg%3E" alt="avatar" />
+                    <div class="cv-name" id="cvName">Alex Rivera</div>
+                    <div class="cv-title" id="cvTitle">Full Stack Developer</div>
+                    <div class="cv-detail"><i class="fas fa-envelope"></i> <span id="cvEmail">alex@dev.io</span></div>
+                    <div class="cv-detail"><i class="fas fa-phone-alt"></i> <span id="cvPhone">+1 555 987 6543</span></div>
+                    <div class="cv-detail"><i class="fas fa-map-pin"></i> <span id="cvAddress">Austin, TX</span></div>
+                    <div class="cv-section"><h3>Summary</h3><div class="cv-summary" id="cvSummary">Full-stack developer with 5+ years of experience in React, Node.js, and cloud architecture.</div></div>
+                    <div class="cv-section"><h3>Skills</h3><div class="cv-skills" id="cvSkills"></div></div>
+                    <div class="cv-section"><h3>Experience</h3><div id="cvExperience"></div></div>
+                    <div class="cv-section"><h3>Education</h3><div id="cvEducation"></div></div>
+                    <div class="cv-section"><h3>Certifications</h3><div id="cvCertifications" class="badge-list"></div></div>
+                    <div class="cv-section"><h3>Projects</h3><div id="cvProjects" class="badge-list"></div></div>
+                    <div class="cv-section"><h3>Languages</h3><div id="cvLanguages" class="badge-list"></div></div>
+                    <div class="cv-section"><h3>Social</h3><div id="cvSocial" style="display:flex;gap:1rem;flex-wrap:wrap;"></div></div>
+                </div>
+                <div class="preview-actions">
+                    <button class="btn btn-outline" id="refreshSmallBtn"><i class="fas fa-rotate-right"></i> Update</button>
+                    <button class="btn btn-primary" id="downloadPdfBtnSmall"><i class="fas fa-download"></i> PDF</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<script>
+    (function() {
+        // --- data stores ---
+        let experiences = ['Senior Developer · TechCorp (2021–present)', 'Junior Developer · StartupX (2018–2021)'];
+        let educations = ['B.S. Computer Science · UT Austin', 'Full Stack Bootcamp · 2020'];
+        let certifications = ['AWS Certified Developer', 'Scrum Master'];
+        let projects = ['E-commerce Platform (React/Node)', 'AI Chatbot (Python)'];
+        let languages = ['English (Native)', 'Spanish (Fluent)'];
+        let avatarFile = null;
+
+        // DOM refs
+        const fullName = document.getElementById('fullName');
+        const jobTitle = document.getElementById('jobTitle');
+        const email = document.getElementById('email');
+        const phone = document.getElementById('phone');
+        const address = document.getElementById('address');
+        const summary = document.getElementById('summary');
+        const skills = document.getElementById('skills');
+        const githubInput = document.getElementById('githubInput');
+        const linkedinInput = document.getElementById('linkedinInput');
+
+        const cvName = document.getElementById('cvName');
+        const cvTitle = document.getElementById('cvTitle');
+        const cvEmail = document.getElementById('cvEmail');
+        const cvPhone = document.getElementById('cvPhone');
+        const cvAddress = document.getElementById('cvAddress');
+        const cvSummary = document.getElementById('cvSummary');
+        const cvSkills = document.getElementById('cvSkills');
+        const cvExperience = document.getElementById('cvExperience');
+        const cvEducation = document.getElementById('cvEducation');
+        const cvCertifications = document.getElementById('cvCertifications');
+        const cvProjects = document.getElementById('cvProjects');
+        const cvLanguages = document.getElementById('cvLanguages');
+        const cvSocial = document.getElementById('cvSocial');
+        const cvAvatar = document.getElementById('cvAvatar');
+        const cvPaper = document.getElementById('cvPaper');
+
+        // lists containers
+        const expList = document.getElementById('expList');
+        const eduList = document.getElementById('eduList');
+        const certList = document.getElementById('certList');
+        const projectList = document.getElementById('projectList');
+        const langList = document.getElementById('langList');
+
+        // template
+        let currentTemplate = 'classic';
+
+        // --- render all dynamic lists ---
+        function renderLists() {
+            renderList(expList, experiences, 'exp');
+            renderList(eduList, educations, 'edu');
+            renderList(certList, certifications, 'cert');
+            renderList(projectList, projects, 'proj');
+            renderList(langList, languages, 'lang');
+        }
+
+        function renderList(container, arr, type) {
+            container.innerHTML = arr.map((item, idx) =>
+                `<span class="entry-item fade-in">${item} <i class="fas fa-times remove" data-type="${type}" data-index="${idx}"></i></span>`
+            ).join('');
+            // attach remove events
+            container.querySelectorAll('.remove').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    const type = this.dataset.type;
+                    const idx = parseInt(this.dataset.index);
+                    if (type === 'exp') experiences.splice(idx, 1);
+                    else if (type === 'edu') educations.splice(idx, 1);
+                    else if (type === 'cert') certifications.splice(idx, 1);
+                    else if (type === 'proj') projects.splice(idx, 1);
+                    else if (type === 'lang') languages.splice(idx, 1);
+                    renderLists();
+                    updatePreview();
+                });
+            });
+        }
+
+        // --- add handlers ---
+        document.getElementById('addExpBtn').addEventListener('click', () => {
+            const val = prompt('Enter experience:');
+            if (val && val.trim()) { experiences.push(val.trim()); renderLists(); updatePreview(); }
+        });
+        document.getElementById('addEduBtn').addEventListener('click', () => {
+            const val = prompt('Enter education:');
+            if (val && val.trim()) { educations.push(val.trim()); renderLists(); updatePreview(); }
+        });
+        document.getElementById('addCertBtn').addEventListener('click', () => {
+            const inp = document.getElementById('certInput');
+            if (inp.value.trim()) { certifications.push(inp.value.trim()); inp.value = ''; renderLists(); updatePreview(); }
+        });
+        document.getElementById('addProjectBtn').addEventListener('click', () => {
+            const inp = document.getElementById('projectInput');
+            if (inp.value.trim()) { projects.push(inp.value.trim()); inp.value = ''; renderLists(); updatePreview(); }
+        });
+        document.getElementById('addLangBtn').addEventListener('click', () => {
+            const inp = document.getElementById('langInput');
+            if (inp.value.trim()) { languages.push(inp.value.trim()); inp.value = ''; renderLists(); updatePreview(); }
+        });
+
+        // --- photo upload ---
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    cvAvatar.src = ev.target.result;
+                    document.getElementById('avatarPreview').src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- AI Summary Generator (mock) ---
+        document.getElementById('aiSummaryBtn').addEventListener('click', function() {
+            const name = fullName.value.trim() || 'Candidate';
+            const title = jobTitle.value.trim() || 'professional';
+            const summaries = [
+                `Dynamic ${title} with a proven track record of delivering high-impact solutions. Known for innovative problem-solving and team leadership.`,
+                `Results-driven ${title} with expertise in full-cycle development and agile methodologies. Passionate about clean code and user-centric design.`,
+                `Creative ${title} with 5+ years of experience in building scalable applications. Adept at bridging business goals with technical execution.`
+            ];
+            summary.value = summaries[Math.floor(Math.random() * summaries.length)];
+            updatePreview();
+        });
+
+        // --- template selector ---
+        document.querySelectorAll('.template-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.template-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                currentTemplate = this.dataset.template;
+                applyTemplate();
+                updatePreview();
+            });
+        });
+
+        function applyTemplate() {
+            cvPaper.className = 'cv-paper';
+            if (currentTemplate === 'classic') cvPaper.classList.add('template-classic');
+            else if (currentTemplate === 'modern') cvPaper.classList.add('template-modern');
+            else if (currentTemplate === 'minimal') cvPaper.classList.add('template-minimal');
+            else if (currentTemplate === 'professional') cvPaper.classList.add('template-classic'); // fallback
+            else if (currentTemplate === 'creative') cvPaper.classList.add('template-modern');
+        }
+
+        // --- update preview ---
+        function updatePreview() {
+            cvName.textContent = fullName.value.trim() || 'Your Name';
+            cvTitle.textContent = jobTitle.value.trim() || 'Job Title';
+            cvEmail.textContent = email.value.trim() || 'email@example.com';
+            cvPhone.textContent = phone.value.trim() || '+1 234 567 890';
+            cvAddress.textContent = address.value.trim() || 'City, Country';
+            cvSummary.textContent = summary.value.trim() || 'Summary here.';
+
+            // skills
+            const skillArr = skills.value.split(',').map(s => s.trim()).filter(Boolean);
+            cvSkills.innerHTML = skillArr.length ? skillArr.map(s => `<span>${s}</span>`).join('') : '<span>No skills</span>';
+
+            // experience
+            cvExperience.innerHTML = experiences.length ? experiences.map(e => `<div>• ${e}</div>`).join('') : '—';
+
+            // education
+            cvEducation.innerHTML = educations.length ? educations.map(e => `<div>• ${e}</div>`).join('') : '—';
+
+            // certifications
+            cvCertifications.innerHTML = certifications.length ? certifications.map(c => `<span>${c}</span>`).join('') : '—';
+
+            // projects
+            cvProjects.innerHTML = projects.length ? projects.map(p => `<span>${p}</span>`).join('') : '—';
+
+            // languages
+            cvLanguages.innerHTML = languages.length ? languages.map(l => `<span>${l}</span>`).join('') : '—';
+
+            // social
+            const gh = githubInput.value.trim();
+            const li = linkedinInput.value.trim();
+            let socialHtml = '';
+            if (gh) socialHtml += `<span><i class="fab fa-github"></i> ${gh}</span>`;
+            if (li) socialHtml += `<span><i class="fab fa-linkedin"></i> ${li}</span>`;
+            cvSocial.innerHTML = socialHtml || '—';
+
+            applyTemplate();
+        }
+
+        // --- refresh buttons ---
+        document.getElementById('refreshPreviewBtn').addEventListener('click', updatePreview);
+        document.getElementById('refreshSmallBtn').addEventListener('click', updatePreview);
+
+        // --- PDF download ---
+        function downloadPDF() {
+            updatePreview();
+            const element = document.getElementById('cvPaper');
+            const opt = {
+                margin: 0.5,
+                filename: 'resume_ai.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+        document.getElementById('downloadPdfBtn').addEventListener('click', downloadPDF);
+        document.getElementById('downloadPdfBtnSmall').addEventListener('click', downloadPDF);
+
+        // --- dark mode ---
+        let dark = false;
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            dark = !dark;
+            document.documentElement.classList.toggle('dark', dark);
+            document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+            this.innerHTML = dark ? '<i class="fas fa-sun"></i> <span id="themeLabel">Light</span>' :
+                '<i class="fas fa-moon"></i> <span id="themeLabel">Dark</span>';
+        });
+
+        // --- auto save (localStorage) ---
+        function autoSave() {
+            const data = {
+                fullName: fullName.value,
+                jobTitle: jobTitle.value,
+                email: email.value,
+                phone: phone.value,
+                address: address.value,
+                summary: summary.value,
+                skills: skills.value,
+                github: githubInput.value,
+                linkedin: linkedinInput.value,
+                experiences,
+                educations,
+                certifications,
+                projects,
+                languages,
+                template: currentTemplate
+            };
+            localStorage.setItem('resumeData', JSON.stringify(data));
+        }
+
+        function autoLoad() {
+            const raw = localStorage.getItem('resumeData');
+            if (!raw) return;
+            try {
+                const data = JSON.parse(raw);
+                fullName.value = data.fullName || '';
+                jobTitle.value = data.jobTitle || '';
+                email.value = data.email || '';
+                phone.value = data.phone || '';
+                address.value = data.address || '';
+                summary.value = data.summary || '';
+                skills.value = data.skills || '';
+                githubInput.value = data.github || '';
+                linkedinInput.value = data.linkedin || '';
+                if (data.experiences) experiences = data.experiences;
+                if (data.educations) educations = data.educations;
+                if (data.certifications) certifications = data.certifications;
+                if (data.projects) projects = data.projects;
+                if (data.languages) languages = data.languages;
+                if (data.template) {
+                    currentTemplate = data.template;
+                    document.querySelectorAll('.template-option').forEach(o => {
+                        o.classList.toggle('active', o.dataset.template === currentTemplate);
+                    });
+                }
+                renderLists();
+                updatePreview();
+            } catch (e) { console.warn('Auto load failed'); }
+        }
+
+        // save on input change
+        document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', autoSave));
+        // save also when lists change (called in renderLists)
+        const origRender = renderLists;
+        renderLists = function() {
+            origRender();
+            autoSave();
+        };
+        // override updatePreview to save
+        const origUpdate = updatePreview;
+        updatePreview = function() {
+            origUpdate();
+            autoSave();
+        };
+
+        // init
+        autoLoad();
+        renderLists();
+        updatePreview();
+        // ensure template class
+        applyTemplate();
+
+        // extra templates: just map to existing styles
+        // we have 5 options but only 3 distinct styles, we map them
+        // but we can add more distinct via extra classes
+        // we just reuse classic/modern/minimal for extra
+
+    })();
+</script>
+</body>
+</html>
